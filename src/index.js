@@ -6,20 +6,11 @@ import { readFileSync } from 'fs';
 import { resolve, join } from 'path';
 import passport from 'passport';
 import all_routes from 'express-list-endpoints';
-const helmet = require("helmet");
-var fs = require('fs');
-const port = 5000;
 
 import routes from './routes';
 import { seedDb } from './utils/seed';
 
-
 const app = express();
-
-app.use(helmet());
-
-
-
 
 // Bodyparser Middleware
 app.use(express.json());
@@ -45,7 +36,7 @@ mongoose
         useFindAndModify: false,
     })
     .then(() => {
-        console.log('MongoDB Successfully Connected...');
+        console.log('MongoDB Connected...');
         seedDb();
     })
     .catch((err) => console.log(err));
@@ -54,21 +45,27 @@ mongoose
 app.use('/', routes);
 app.use('/public', express.static(join(__dirname, '../public')));
 
+// Serve static assets if in production
+if (isProduction) {
+    // Set static folder
+    app.use(express.static(join(__dirname, '../../client/build')));
 
-var key = fs.readFileSync(resolve(__dirname, '../security/cert.key'));
-var cert = fs.readFileSync(resolve(__dirname, '../security/cert.pem'));
-var options = {
-    key: key,
-    cert: cert
-};
+    app.get('*', (req, res) => {
+        res.sendFile(resolve(__dirname, '../..', 'client', 'build', 'index.html')); // index is in /server/src so 2 folders up
+    });
 
-//app = express()
-app.get('/', (req, res) => {
-    res.send('Now using https..');
-});
+    const port = process.env.PORT || 80;
+    app.listen(port, () => console.log(`Server started on port ${port}`));
+} else {
+    const port = process.env.PORT || 5000;
 
-var server = https.createServer(options, app);
+    const httpsOptions = {
+        key: readFileSync(resolve(__dirname, '../security/cert.key')),
+        cert: readFileSync(resolve(__dirname, '../security/cert.pem')),
+    };
 
-server.listen(port, () => {
-    console.log("server starting on port : " + port)
-});
+    const server = https.createServer(httpsOptions, app).listen(port, () => {
+        console.log('https server running at ' + port);
+        // console.log(all_routes(app));
+    });
+}
