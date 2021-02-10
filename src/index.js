@@ -7,10 +7,14 @@ import { resolve, join } from 'path';
 import passport from 'passport';
 import all_routes from 'express-list-endpoints';
 
+const helmet = require("helmet");
+
 import routes from './routes';
 import { seedDb } from './utils/seed';
 
 const app = express();
+
+app.use(helmet());
 
 // Bodyparser Middleware
 app.use(express.json());
