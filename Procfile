@@ -1,1 +1,1 @@
-web :"dev": "concurrently \"npm run server\" \"npm run client\""
+web :"start": "npm run start-prod --prefix server",
